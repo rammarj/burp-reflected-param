@@ -33,20 +33,21 @@ public class BurpExtender implements IBurpExtender, IHttpListener {
 
     @Override
     public void processHttpMessage(int arg0, boolean arg1, IHttpRequestResponse arg2) {
-        if (IBurpExtenderCallbacks.TOOL_PROXY == arg0 && arg2.getHttpService().getHost().equals(this.uInterface.getHost())) {
+        if (IBurpExtenderCallbacks.TOOL_PROXY == arg0 
+                && arg2.getHttpService().getHost().equals(this.uInterface.getHost())) {
             if (arg1 == true) {
                 if (IBurpExtenderCallbacks.TOOL_PROXY == arg0) {
-                    IRequestInfo req = helpers.analyzeRequest(arg2);
-                    List<String> headers = req.getHeaders();
+                    IRequestInfo requestInfo = helpers.analyzeRequest(arg2);
+                    List<String> headers = requestInfo.getHeaders();
                     
-                    byte[] new_msg = helpers.buildHttpMessage(headers,
-                            helpers.stringToBytes(helpers.bytesToString(arg2.getRequest()).substring(req.getBodyOffset())));
-                    //original.setRequest(new_msg);
-                    IHttpRequestResponse nuevo_response = ibec.makeHttpRequest(arg2.getHttpService(), new_msg);
-                    byte[] response = nuevo_response.getResponse();
+                    byte[] newMessage = helpers.buildHttpMessage(headers,
+                            helpers.stringToBytes(helpers.bytesToString(arg2.getRequest()).substring(requestInfo.getBodyOffset())));
+                    //original.setRequest(newMessage);
+                    IHttpRequestResponse newResponse = ibec.makeHttpRequest(arg2.getHttpService(), newMessage);
+                    byte[] response = newResponse.getResponse();
                     if (helpers.indexOf(response, "burp-header-injector-".getBytes(), true, 0, response.length - 1) != -1) {
-                        URL url = req.getUrl();
-                        ibec.sendToRepeater(url.getHost(), url.getPort(), true, new_msg, "H.I.");
+                        URL url = requestInfo.getUrl();
+                        ibec.sendToRepeater(url.getHost(), url.getPort(), true, newMessage, "H.I.");
                     }
                 }
             } else {
