@@ -38,35 +38,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener {
                 if (IBurpExtenderCallbacks.TOOL_PROXY == arg0) {
                     IRequestInfo req = helpers.analyzeRequest(arg2);
                     List<String> headers = req.getHeaders();
-                    for (int i = 0; i < headers.size(); i++) {
-                        String get = headers.get(i);
-                        if (get.indexOf("Host") != -1) {
-                            get = "Host: "+uInterface.miServer()+"/burp-header-injector-HOST"; //inject this string 
-                            headers.remove(i);
-                            headers.add(i, get);
-                        }else if (get.indexOf("Accept-Language") != -1) {
-                            get = "Accept-Language: burp-header-injector-ACCEPT"; //inject this string 
-                            headers.remove(i);
-                            headers.add(i, get);
-                        }else if (get.indexOf("User-Agent") != -1) {                            
-                            get = "User-Agent: burp-header-injector-UA"; //inject this string 
-                            headers.remove(i);
-                            headers.add(i, get);
-                        }else if (get.indexOf("Referer") != -1) {                            
-                            get += ".burp-header-injector-REFERER"; //inject this string 
-                            headers.remove(i);
-                            headers.add(i, get);
-                        }else if (get.indexOf("Origin") != -1) {                            
-                            get = "Origin: "+uInterface.miServer()+".burp-header-injector-ORIGIN"; //inject this string 
-                            headers.remove(i);
-                            headers.add(i, get);
-                        }
-                    }
-                    headers.add("X-Forwarded-For: "+uInterface.miServer()+".burp-header-injector-XFF");
-                    headers.add("X-Forwarded-Host: "+uInterface.miServer()+".burp-header-injector-XFH");
-                    headers.add("X-Forwarded-Proto: "+uInterface.miServer()+".burp-header-injector-XFP");
-            //he
-                    //headers.add("X-Forwarded-For: burp-header-injector-HOST");
+                    
                     byte[] new_msg = helpers.buildHttpMessage(headers,
                             helpers.stringToBytes(helpers.bytesToString(arg2.getRequest()).substring(req.getBodyOffset())));
                     //original.setRequest(new_msg);

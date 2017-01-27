@@ -20,16 +20,16 @@ public class Util {
     public static String generateRandomString(int lenght) {
         SplittableRandom splittableRandom = new SplittableRandom();
         StringBuffer a = new StringBuffer();
-        int nextInt, ext;
+        int nextInt, temp;
         for (int i = 0; i < lenght; i++) {
             nextInt = splittableRandom.nextInt(0, 2);
-            ext = 'a';
+            temp = 'a';
             if (nextInt == 1) {
-                ext = splittableRandom.nextInt('A', 'Z');
+                temp = splittableRandom.nextInt('A', 'Z');
             } else {
-                ext = splittableRandom.nextInt('a', 'z');
+                temp = splittableRandom.nextInt('a', 'z');
             }
-            a.append((char) ext);
+            a.append((char) temp);
         }
         return a.toString();
     }
