@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package burp.userinterface;
 
 import burp.IBurpExtenderCallbacks;
@@ -11,9 +7,12 @@ import burp.IHttpRequestResponse;
 import burp.IParameter;
 import burp.IRequestInfo;
 import burp.ITextEditor;
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.awt.PopupMenu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -25,6 +24,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
@@ -54,7 +54,7 @@ public class UInterface extends JPanel implements ActionListener {
     private JTable requestsTable, parametersTable;
     private IExtensionHelpers helpers;
     private int selectedRow;
-    private JTextField hostField;
+    //private JTextField hostField;
 
     public UInterface(IBurpExtenderCallbacks ibec) {
         //super(new BorderLayout(10,10));
@@ -62,7 +62,6 @@ public class UInterface extends JPanel implements ActionListener {
         setLayout(new GridLayout());
         this.ibec = ibec;
         selectedRow = -1;
-        this.hostField = new JTextField(20);
         this.helpers = ibec.getHelpers();
         this.requestsList = new LinkedList<>();
         this.parametersList = new LinkedList<>();
@@ -73,20 +72,20 @@ public class UInterface extends JPanel implements ActionListener {
         this.requestTableModel = new DefaultTableModel(new String[]{"#id", "method", "url"}, 0);
         tempParamsList = null;
         this.parametersTableModel = new DefaultTableModel(new String[]{"name", "type"}, 0);
-        //fields de conexion a datos
-
+        
         //crear los httpMessageEditors para presentar los requests/responses de los usuarios 1 y 2 y el de CSRF
         this.msgeditorRequest = ibec.createTextEditor();
+        msgeditorRequest.getComponent().add(new PopupMenu());
         this.msgeditorRequest.setEditable(false);
         this.msgeditorResponse = ibec.createTextEditor();
         this.msgeditorResponse.setEditable(false);
         //this.requestTableModel.
         //crear panel de requests
-        JPanel pnl_requests = new JPanel();
-        Border brd_pnlIdors = new TitledBorder(new LineBorder(Color.BLACK), "Requests list");
-        pnl_requests.setBorder(brd_pnlIdors);
-        BoxLayout bxl_proyecto = new BoxLayout(pnl_requests, BoxLayout.Y_AXIS);
-        pnl_requests.setLayout(bxl_proyecto);
+        JPanel pnlRequests = new JPanel();
+        Border brdRequestList = new TitledBorder(new LineBorder(Color.BLACK), "Requests list");
+        pnlRequests.setBorder(brdRequestList);
+        BoxLayout bxl_proyecto = new BoxLayout(pnlRequests, BoxLayout.Y_AXIS);
+        pnlRequests.setLayout(bxl_proyecto);
         //eleccion de proyecto
         //crear tabla requests
 
@@ -111,28 +110,22 @@ public class UInterface extends JPanel implements ActionListener {
                     } catch (Exception ex) {
                         try {
                             ibec.getStderr().write(ex.getMessage().getBytes());
-                        } catch (IOException ex1) {
-                        }
+                        } catch (IOException ex1) { }
                     }
                 }
             }
         });
         requestsTable.setModel(this.requestTableModel);
-        JScrollPane scl_tblRequests = new JScrollPane();
-        scl_tblRequests.setPreferredSize(new Dimension(500, 220));
-        scl_tblRequests.setViewportView(requestsTable);
-        JPanel pnl_host = new JPanel();
-        pnl_host.add(new JLabel("Host:"));
-        pnl_host.add(this.hostField);
-        pnl_host.add(this.cleanRequestsButton);
-        pnl_requests.add(pnl_host);
-        pnl_requests.add(scl_tblRequests);
+        JScrollPane sclTblRequests = new JScrollPane();
+        sclTblRequests.setPreferredSize(new Dimension(500, 220));
+        sclTblRequests.setViewportView(requestsTable);        
+        pnlRequests.add(sclTblRequests);
         //crear panel preview HTTP
         //crear panel request preview
-        JTabbedPane tab_requests = new JTabbedPane();
+        JTabbedPane tabRequests = new JTabbedPane();
         //agregar al tab 2 los requestst/responeses del usuario 2
-        tab_requests.add("Request", this.msgeditorRequest.getComponent());
-        tab_requests.add("Response", this.msgeditorResponse.getComponent());
+        tabRequests.add("Request", this.msgeditorRequest.getComponent());
+        tabRequests.add("Response", this.msgeditorResponse.getComponent());
         //agregar al tab 2 los requestst/responeses del usuario 2
         //agragar los tabs del usuario 1 y 2 y el de CSRF al tab principal
 
@@ -157,28 +150,38 @@ public class UInterface extends JPanel implements ActionListener {
                 }
             }
         });
-        JScrollPane scl_tblTokens = new JScrollPane();
-        scl_tblTokens.setPreferredSize(new Dimension(400, 120));
-        scl_tblTokens.setViewportView(parametersTable);
+        JScrollPane sclTblTokens = new JScrollPane();
+        sclTblTokens.setPreferredSize(new Dimension(400, 120));
+        sclTblTokens.setViewportView(parametersTable);
 
-        JPanel pnl_btnsTablaTokens = new JPanel();
-        BoxLayout bxl_pnlBtnTokens = new BoxLayout(pnl_btnsTablaTokens, BoxLayout.Y_AXIS);
-        pnl_btnsTablaTokens.setLayout(bxl_pnlBtnTokens);
+        JPanel pnlbtnsTablaTokens = new JPanel();
+        BoxLayout bxlPnlBtnTokens = new BoxLayout(pnlbtnsTablaTokens, BoxLayout.Y_AXIS);
+        pnlbtnsTablaTokens.setLayout(bxlPnlBtnTokens);
         //jPanel.setPreferredSize(new Dimension(100,200));
-        pnl_btnsTablaTokens.add(this.automaticSendCheck);
+        pnlbtnsTablaTokens.add(this.automaticSendCheck);
 
-        JPanel pnl_csrf = new JPanel(new GridLayout());
-        pnl_csrf.setBorder(new TitledBorder(new LineBorder(Color.BLACK), "Reflected parameters"));
-        pnl_csrf.add(scl_tblTokens);
-        JSplitPane pnl_izquierdo = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        pnl_izquierdo.add(pnl_requests);
-        pnl_izquierdo.add(pnl_csrf);
-
+        JPanel pnlReflectedParams = new JPanel(new GridLayout());
+        pnlReflectedParams.setBorder(new TitledBorder(
+                new LineBorder(Color.BLACK), "Reflected parameters"));
+        pnlReflectedParams.add(sclTblTokens);
+               
+        JPanel pnlClearRrequests = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        pnlClearRrequests.add(this.cleanRequestsButton);
+        pnlReflectedParams.add(pnlClearRrequests);
+        
+        JSplitPane splpnIzquierdo = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splpnIzquierdo.add(pnlRequests);
+        splpnIzquierdo.add(pnlReflectedParams);              
+        
+        JPanel pnlIzquierdo = new JPanel(new BorderLayout());
+        
+        pnlIzquierdo.add(splpnIzquierdo, "Center");
+        pnlIzquierdo.add(pnlClearRrequests, "South");
+        
         JSplitPane contenedorPrincipal = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        contenedorPrincipal.add(pnl_izquierdo);
-        contenedorPrincipal.add(tab_requests);
-
-        //this.requestsTable.set
+        contenedorPrincipal.add(pnlIzquierdo);
+        contenedorPrincipal.add(tabRequests);
+        
         contenedorPrincipal.setAutoscrolls(true);
         add(contenedorPrincipal);
         ibec.customizeUiComponent(this);
@@ -230,18 +233,18 @@ public class UInterface extends JPanel implements ActionListener {
      * Busca una cadena en bytes y devuelve un par (comienzo y fin de la
      * cadena). Si no encuentra nada retorna NULL
      */
-    private int[] indexOf(byte[] data, byte[] search, int start, int end) {
-        int start_ = helpers.indexOf(data, search, true, start, end);
-        if (start_ != -1) {
-            int end_ = start_ + search.length;
-            return new int[]{start_, end_};
+    /*private int[] indexOf(byte[] data, byte[] search, int start, int end) {
+        int startIndex = helpers.indexOf(data, search, true, start, end);
+        if (startIndex != -1) {
+            int end_ = startIndex + search.length;
+            return new int[]{startIndex, end_};
         }
         return null;
-    }
-
+    }*/
     /**
      * Devuelve todas las coincidencias 'search' en 'data'.
      */
+    /*
     private LinkedList<int[]> recursiveIndexOf(byte[] data, byte[] search) {
         LinkedList<int[]> ret = new LinkedList<>();
         int start = 0, end = data.length - 1;
@@ -254,9 +257,5 @@ public class UInterface extends JPanel implements ActionListener {
         }
         return ret;
     }
-
-    public String getHost() {
-        return this.hostField.getText().trim();
-    }
-
+    */
 }
