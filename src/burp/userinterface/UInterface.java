@@ -1,4 +1,3 @@
-
 package burp.userinterface;
 
 import burp.IBurpExtenderCallbacks;
@@ -34,6 +33,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -42,10 +43,10 @@ import javax.swing.table.DefaultTableModel;
  */
 public class UInterface extends JPanel implements ActionListener {
 
-    private DefaultTableModel requestTableModel, parametersTableModel;
-    private JButton cleanRequestsButton;
+    private final DefaultTableModel requestTableModel, parametersTableModel;
+    private final JButton cleanRequestsButton;
     private ITextEditor msgeditorRequest, msgeditorResponse;
-    private JCheckBox automaticSendCheck;
+    //private JCheckBox automaticSendCheck;
     private LinkedList<IHttpRequestResponse> requestsList;
     private LinkedList<LinkedList<IParameter>> parametersList;
     private LinkedList<IParameter> tempParamsList;
@@ -53,26 +54,24 @@ public class UInterface extends JPanel implements ActionListener {
     private int contRequests;
     private JTable requestsTable, parametersTable;
     private IExtensionHelpers helpers;
-    private int selectedRow;
-    //private JTextField hostField;
 
     public UInterface(IBurpExtenderCallbacks ibec) {
         //super(new BorderLayout(10,10));
         this.setBackground(Color.WHITE);
         setLayout(new GridLayout());
         this.ibec = ibec;
-        selectedRow = -1;
+        //selectedRow = -1;
         this.helpers = ibec.getHelpers();
         this.requestsList = new LinkedList<>();
         this.parametersList = new LinkedList<>();
         contRequests = 1;
-        automaticSendCheck = new JCheckBox("Add request to list (If sends CSRF Tokens)");
+        //automaticSendCheck = new JCheckBox("Add request to list (If sends CSRF Tokens)");
         this.cleanRequestsButton = new JButton("Clear requests table");
         this.cleanRequestsButton.addActionListener(this);
         this.requestTableModel = new DefaultTableModel(new String[]{"#id", "method", "url"}, 0);
         tempParamsList = null;
         this.parametersTableModel = new DefaultTableModel(new String[]{"name", "type"}, 0);
-        
+
         //crear los httpMessageEditors para presentar los requests/responses de los usuarios 1 y 2 y el de CSRF
         this.msgeditorRequest = ibec.createTextEditor();
         msgeditorRequest.getComponent().add(new PopupMenu());
@@ -92,25 +91,19 @@ public class UInterface extends JPanel implements ActionListener {
         requestsTable = new JTable();
         //tbl_requests.setEnabled(false);
         requestsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        requestsTable.addMouseListener(new MouseAdapter() {
+        requestsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                selectedRow = requestsTable.getSelectedRow();
+            public void valueChanged(ListSelectionEvent e) {
+                int selectedRow = requestsTable.getSelectedRow();
                 if (selectedRow != -1) {
                     IHttpRequestResponse http_msg = requestsList.get(selectedRow);
-                    try {
-                        tempParamsList = parametersList.get(selectedRow);
-                        //LinkedList<ParameterWithMarkers> params = parametersList.get(selectedRow);
-                        msgeditorRequest.setText(http_msg.getRequest());
-                        msgeditorResponse.setText(http_msg.getResponse());
-                        parametersTableModel.setRowCount(0);
-                        for (IParameter get : tempParamsList) {
-                            sendToParametersTable(get);
-                        }
-                    } catch (Exception ex) {
-                        try {
-                            ibec.getStderr().write(ex.getMessage().getBytes());
-                        } catch (IOException ex1) { }
+                    tempParamsList = parametersList.get(selectedRow);
+                    //LinkedList<ParameterWithMarkers> params = parametersList.get(selectedRow);
+                    msgeditorRequest.setText(http_msg.getRequest());
+                    msgeditorResponse.setText(http_msg.getResponse());
+                    parametersTableModel.setRowCount(0);
+                    for (IParameter get : tempParamsList) {
+                        sendToParametersTable(get);
                     }
                 }
             }
@@ -118,7 +111,7 @@ public class UInterface extends JPanel implements ActionListener {
         requestsTable.setModel(this.requestTableModel);
         JScrollPane sclTblRequests = new JScrollPane();
         sclTblRequests.setPreferredSize(new Dimension(500, 220));
-        sclTblRequests.setViewportView(requestsTable);        
+        sclTblRequests.setViewportView(requestsTable);
         pnlRequests.add(sclTblRequests);
         //crear panel preview HTTP
         //crear panel request preview
@@ -132,21 +125,14 @@ public class UInterface extends JPanel implements ActionListener {
         parametersTable = new JTable();
         parametersTable.setModel(this.parametersTableModel);
         parametersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        parametersTable.addMouseListener(new MouseAdapter() {
+        parametersTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void valueChanged(ListSelectionEvent e) {
                 int selected = parametersTable.getSelectedRow();
-                if (selected != -1 && selectedRow != -1) {
-                    try {
-                        IParameter parametro = tempParamsList.get(selected);
-                        msgeditorRequest.setSearchExpression(parametro.getValue());
-                        msgeditorResponse.setSearchExpression(parametro.getValue());
-                    } catch (Exception ex) {
-                        try {
-                            ibec.getStderr().write(ex.getMessage().getBytes());
-                        } catch (IOException ex1) {
-                        }
-                    }
+                if (selected != -1) {
+                    IParameter parametro = tempParamsList.get(selected);
+                    msgeditorRequest.setSearchExpression(parametro.getValue());
+                    msgeditorResponse.setSearchExpression(parametro.getValue());
                 }
             }
         });
@@ -154,34 +140,28 @@ public class UInterface extends JPanel implements ActionListener {
         sclTblTokens.setPreferredSize(new Dimension(400, 120));
         sclTblTokens.setViewportView(parametersTable);
 
-        JPanel pnlbtnsTablaTokens = new JPanel();
-        BoxLayout bxlPnlBtnTokens = new BoxLayout(pnlbtnsTablaTokens, BoxLayout.Y_AXIS);
-        pnlbtnsTablaTokens.setLayout(bxlPnlBtnTokens);
-        //jPanel.setPreferredSize(new Dimension(100,200));
-        pnlbtnsTablaTokens.add(this.automaticSendCheck);
-
         JPanel pnlReflectedParams = new JPanel(new GridLayout());
         pnlReflectedParams.setBorder(new TitledBorder(
                 new LineBorder(Color.BLACK), "Reflected parameters"));
         pnlReflectedParams.add(sclTblTokens);
-               
+
         JPanel pnlClearRrequests = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         pnlClearRrequests.add(this.cleanRequestsButton);
         pnlReflectedParams.add(pnlClearRrequests);
-        
+
         JSplitPane splpnIzquierdo = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splpnIzquierdo.add(pnlRequests);
-        splpnIzquierdo.add(pnlReflectedParams);              
-        
+        splpnIzquierdo.add(pnlReflectedParams);
+
         JPanel pnlIzquierdo = new JPanel(new BorderLayout());
-        
+
         pnlIzquierdo.add(splpnIzquierdo, "Center");
         pnlIzquierdo.add(pnlClearRrequests, "South");
-        
+
         JSplitPane contenedorPrincipal = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         contenedorPrincipal.add(pnlIzquierdo);
         contenedorPrincipal.add(tabRequests);
-        
+
         contenedorPrincipal.setAutoscrolls(true);
         add(contenedorPrincipal);
         ibec.customizeUiComponent(this);
@@ -225,10 +205,6 @@ public class UInterface extends JPanel implements ActionListener {
         this.parametersTableModel.addRow(new String[]{name, type});
     }
 
-    public boolean automaticAdd() {
-        return this.automaticSendCheck.isSelected();
-    }
-
     /**
      * Busca una cadena en bytes y devuelve un par (comienzo y fin de la
      * cadena). Si no encuentra nada retorna NULL
@@ -257,5 +233,5 @@ public class UInterface extends JPanel implements ActionListener {
         }
         return ret;
     }
-    */
+     */
 }
