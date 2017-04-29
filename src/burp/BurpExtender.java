@@ -35,7 +35,8 @@ public class BurpExtender implements IBurpExtender, IHttpListener {
     }
     @Override
     public void processHttpMessage(int arg0, boolean arg1, IHttpRequestResponse arg2) {
-        if (!arg1 && (IBurpExtenderCallbacks.TOOL_PROXY == arg0 || IBurpExtenderCallbacks.TOOL_SPIDER == arg0)
+        if (!arg1 && (IBurpExtenderCallbacks.TOOL_PROXY == arg0 
+                || IBurpExtenderCallbacks.TOOL_SPIDER == arg0)
                 && ibec.isInScope(arg2.getUrl())) {
             LinkedList<IParameter> lista = new LinkedList<>();
             IRequestInfo info = helpers.analyzeRequest(arg2.getRequest());
@@ -50,9 +51,9 @@ public class BurpExtender implements IBurpExtender, IHttpListener {
                         lista.add(param);
                     }
                     //test urldecoded too
-                    indexOf = helpers.indexOf(response, helpers.stringToBytes(helpers.urlDecode(param.getValue()))
-                            ,true, 0, response.length - 1);
-                    if (indexOf != -1) {
+                    indexOf = helpers.indexOf(response, helpers.stringToBytes(
+                            helpers.urlDecode(param.getValue())),true, 0, response.length - 1);
+                    if (indexOf != -1 && lista.indexOf(param)==-1) {
                         lista.add(param);
                     }
                 }

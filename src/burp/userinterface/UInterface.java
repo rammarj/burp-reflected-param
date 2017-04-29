@@ -14,21 +14,14 @@ import java.awt.GridLayout;
 import java.awt.PopupMenu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.io.IOException;
 import java.util.LinkedList;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.Border;
 import javax.swing.border.LineBorder;
@@ -50,10 +43,10 @@ public class UInterface extends JPanel implements ActionListener {
     private LinkedList<IHttpRequestResponse> requestsList;
     private LinkedList<LinkedList<IParameter>> parametersList;
     private LinkedList<IParameter> tempParamsList;
-    private IBurpExtenderCallbacks ibec;
+    private final IBurpExtenderCallbacks ibec;
     private int contRequests;
     private JTable requestsTable, parametersTable;
-    private IExtensionHelpers helpers;
+    private final IExtensionHelpers helpers;
 
     public UInterface(IBurpExtenderCallbacks ibec) {
         //super(new BorderLayout(10,10));
@@ -70,7 +63,7 @@ public class UInterface extends JPanel implements ActionListener {
         this.cleanRequestsButton.addActionListener(this);
         this.requestTableModel = new DefaultTableModel(new String[]{"#id", "method", "url"}, 0);
         tempParamsList = null;
-        this.parametersTableModel = new DefaultTableModel(new String[]{"name", "type"}, 0);
+        this.parametersTableModel = new DefaultTableModel(new String[]{"name","value","type"}, 0);
 
         //crear los httpMessageEditors para presentar los requests/responses de los usuarios 1 y 2 y el de CSRF
         this.msgeditorRequest = ibec.createTextEditor();
@@ -184,9 +177,7 @@ public class UInterface extends JPanel implements ActionListener {
         this.requestTableModel.addRow(new String[]{"" + contRequests++, requestInfo.getMethod(), requestInfo.getUrl().toString()});
     }
 
-    private void sendToParametersTable(IParameter token) {
-        //IParameter token = pwm.getParameter();
-        String name = token.getName();
+    private void sendToParametersTable(IParameter token) {       
         String type = "";
         switch (token.getType()) {
             case IParameter.PARAM_COOKIE:
@@ -202,7 +193,7 @@ public class UInterface extends JPanel implements ActionListener {
                 type = "NOT SUPPORTED YET";
                 break;
         }
-        this.parametersTableModel.addRow(new String[]{name, type});
+        this.parametersTableModel.addRow(new String[]{token.getName(), token.getValue(), type});
     }
 
     /**
