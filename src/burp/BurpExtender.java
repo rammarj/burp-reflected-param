@@ -13,7 +13,7 @@ public class BurpExtender implements IBurpExtender, IHttpListener {
     private IBurpExtenderCallbacks ibec;
     private UInterface uInterface;
     private IExtensionHelpers helpers;
-
+    
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks ibec) {
         this.ibec = ibec;//guardar
@@ -21,7 +21,6 @@ public class BurpExtender implements IBurpExtender, IHttpListener {
         uInterface = new UInterface(ibec);
         ibec.registerHttpListener(this);
         /*agregar el nuevo tab a burp*/
-        //instanciar la interfaz
         ibec.addSuiteTab(new ITab() {
             @Override
             public String getTabCaption() {
@@ -34,34 +33,33 @@ public class BurpExtender implements IBurpExtender, IHttpListener {
         });
     }
     @Override
-    public void processHttpMessage(int arg0, boolean arg1, IHttpRequestResponse arg2) {
-        if (!arg1 && (IBurpExtenderCallbacks.TOOL_PROXY == arg0 
-                || IBurpExtenderCallbacks.TOOL_SPIDER == arg0)
-                && ibec.isInScope(arg2.getUrl())) {
-            LinkedList<IParameter> lista = new LinkedList<>();
-            IRequestInfo info = helpers.analyzeRequest(arg2.getRequest());
-            byte[] response = arg2.getResponse();
-            //byte[] request = arg2.getRequest();
+    public void processHttpMessage(int flag, boolean isRequest, IHttpRequestResponse message) {
+        if (!isRequest && (IBurpExtenderCallbacks.TOOL_PROXY == flag 
+                || IBurpExtenderCallbacks.TOOL_SPIDER == flag)
+                && ibec.isInScope(message.getUrl())) {
+            LinkedList<IParameter> reflectedParams = new LinkedList<>();
+            IRequestInfo info = helpers.analyzeRequest(message.getRequest());
+            byte[] response = message.getResponse();
+            //byte[] request = message.getRequest();
             List<IParameter> parameters = info.getParameters();
             for (IParameter param : parameters) {
                 if (param.getValue().length() > 4) {
                     int indexOf = helpers.indexOf(response, helpers.stringToBytes(param.getValue())
                             ,true, 0, response.length - 1);
                     if (indexOf != -1) {
-                        lista.add(param);
+                        reflectedParams.add(param);
                     }
                     //test urldecoded too
                     indexOf = helpers.indexOf(response, helpers.stringToBytes(
                             helpers.urlDecode(param.getValue())),true, 0, response.length - 1);
-                    if (indexOf != -1 && lista.indexOf(param)==-1) {
-                        lista.add(param);
+                    if (indexOf != -1 && reflectedParams.indexOf(param)==-1) {
+                        reflectedParams.add(param);
                     }
                 }
             }
-            if (lista.size() > 0) {
-                uInterface.sendToRequestsTable(arg2, lista);
+            if (reflectedParams.size() > 0) {
+                uInterface.sendToRequestsTable(message, reflectedParams);
             }
-
         }
     }
     /**

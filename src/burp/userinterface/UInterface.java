@@ -14,6 +14,7 @@ import java.awt.GridLayout;
 import java.awt.PopupMenu;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.URL;
 import java.util.LinkedList;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -37,7 +38,7 @@ import javax.swing.table.DefaultTableModel;
 public class UInterface extends JPanel implements ActionListener {
 
     private final DefaultTableModel requestTableModel, parametersTableModel;
-    private final JButton cleanRequestsButton;
+    private final JButton cleanRequestsButton, sendToRepeaterButton;
     private ITextEditor msgeditorRequest, msgeditorResponse;
     //private JCheckBox automaticSendCheck;
     private LinkedList<IHttpRequestResponse> requestsList;
@@ -48,10 +49,8 @@ public class UInterface extends JPanel implements ActionListener {
     private JTable requestsTable, parametersTable;
     private final IExtensionHelpers helpers;
 
-    public UInterface(IBurpExtenderCallbacks ibec) {
-        //super(new BorderLayout(10,10));
-        this.setBackground(Color.WHITE);
-        setLayout(new GridLayout());
+    public UInterface(IBurpExtenderCallbacks ibec) {               
+        super(new GridLayout());
         this.ibec = ibec;
         //selectedRow = -1;
         this.helpers = ibec.getHelpers();
@@ -61,9 +60,13 @@ public class UInterface extends JPanel implements ActionListener {
         //automaticSendCheck = new JCheckBox("Add request to list (If sends CSRF Tokens)");
         this.cleanRequestsButton = new JButton("Clear requests table");
         this.cleanRequestsButton.addActionListener(this);
+
+        this.sendToRepeaterButton = new JButton("Send to repeater");
+        this.sendToRepeaterButton.addActionListener(this);
+
         this.requestTableModel = new DefaultTableModel(new String[]{"#id", "method", "url"}, 0);
         tempParamsList = null;
-        this.parametersTableModel = new DefaultTableModel(new String[]{"name","value","type"}, 0);
+        this.parametersTableModel = new DefaultTableModel(new String[]{"name", "value", "type"}, 0);
 
         //crear los httpMessageEditors para presentar los requests/responses de los usuarios 1 y 2 y el de CSRF
         this.msgeditorRequest = ibec.createTextEditor();
@@ -139,7 +142,7 @@ public class UInterface extends JPanel implements ActionListener {
         pnlReflectedParams.add(sclTblTokens);
 
         JPanel pnlClearRrequests = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        pnlClearRrequests.add(this.cleanRequestsButton);
+        pnlClearRrequests.add(this.cleanRequestsButton);        
         pnlReflectedParams.add(pnlClearRrequests);
 
         JSplitPane splpnIzquierdo = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -151,9 +154,16 @@ public class UInterface extends JPanel implements ActionListener {
         pnlIzquierdo.add(splpnIzquierdo, "Center");
         pnlIzquierdo.add(pnlClearRrequests, "South");
 
+        JPanel pnlSendRepeater = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        pnlSendRepeater.add(this.sendToRepeaterButton);
+        
+        JPanel pnlRight = new JPanel(new BorderLayout());
+        pnlRight.add(tabRequests, "Center");
+        pnlRight.add(pnlSendRepeater, "South");        
+        
         JSplitPane contenedorPrincipal = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         contenedorPrincipal.add(pnlIzquierdo);
-        contenedorPrincipal.add(tabRequests);
+        contenedorPrincipal.add(pnlRight);
 
         contenedorPrincipal.setAutoscrolls(true);
         add(contenedorPrincipal);
@@ -162,11 +172,23 @@ public class UInterface extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        this.requestsList.clear();
-        this.parametersList.clear();
-        //this.tempParamsList.clear();
-        this.requestTableModel.setRowCount(0);
-        this.parametersTableModel.setRowCount(0);
+        Object source = e.getSource();
+        if (source == this.cleanRequestsButton) {
+            this.requestsList.clear();
+            this.parametersList.clear();
+            this.requestTableModel.setRowCount(0);
+            this.parametersTableModel.setRowCount(0);
+        } 
+        else if (source == this.sendToRepeaterButton) {            
+            int selected = requestsTable.getSelectedRow();
+            if (selected != -1) {
+                IHttpRequestResponse msgHTTP = requestsList.get(selected);   
+                IRequestInfo request = helpers.analyzeRequest(msgHTTP);
+                URL url = request.getUrl();
+                ibec.sendToRepeater(url.getHost(), url.getPort(), (url.getPort()==443)
+                        , msgHTTP.getRequest(), null);
+            }
+        }
     }
 
     public void sendToRequestsTable(IHttpRequestResponse rq, LinkedList<IParameter> pwm) {
@@ -174,10 +196,11 @@ public class UInterface extends JPanel implements ActionListener {
         this.parametersList.add(pwm);
         IRequestInfo requestInfo = this.ibec.getHelpers().analyzeRequest(rq);
         //sendToParametersTable(pwm);
-        this.requestTableModel.addRow(new String[]{"" + contRequests++, requestInfo.getMethod(), requestInfo.getUrl().toString()});
+        this.requestTableModel.addRow(new String[]{String.valueOf(contRequests++),
+            requestInfo.getMethod(), requestInfo.getUrl().toString()});
     }
 
-    private void sendToParametersTable(IParameter token) {       
+    private void sendToParametersTable(IParameter token) {
         String type = "";
         switch (token.getType()) {
             case IParameter.PARAM_COOKIE:
