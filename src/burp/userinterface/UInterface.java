@@ -49,7 +49,7 @@ public class UInterface extends JPanel implements ActionListener {
     private JTable requestsTable, parametersTable;
     private final IExtensionHelpers helpers;
 
-    public UInterface(IBurpExtenderCallbacks ibec) {               
+    public UInterface(IBurpExtenderCallbacks ibec) {
         super(new GridLayout());
         this.ibec = ibec;
         //selectedRow = -1;
@@ -142,7 +142,7 @@ public class UInterface extends JPanel implements ActionListener {
         pnlReflectedParams.add(sclTblTokens);
 
         JPanel pnlClearRrequests = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        pnlClearRrequests.add(this.cleanRequestsButton);        
+        pnlClearRrequests.add(this.cleanRequestsButton);
         pnlReflectedParams.add(pnlClearRrequests);
 
         JSplitPane splpnIzquierdo = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -156,11 +156,11 @@ public class UInterface extends JPanel implements ActionListener {
 
         JPanel pnlSendRepeater = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         pnlSendRepeater.add(this.sendToRepeaterButton);
-        
+
         JPanel pnlRight = new JPanel(new BorderLayout());
         pnlRight.add(tabRequests, "Center");
-        pnlRight.add(pnlSendRepeater, "South");        
-        
+        pnlRight.add(pnlSendRepeater, "South");
+
         JSplitPane contenedorPrincipal = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         contenedorPrincipal.add(pnlIzquierdo);
         contenedorPrincipal.add(pnlRight);
@@ -168,6 +168,17 @@ public class UInterface extends JPanel implements ActionListener {
         contenedorPrincipal.setAutoscrolls(true);
         add(contenedorPrincipal);
         ibec.customizeUiComponent(this);
+    }
+
+    public boolean alreadyExists(IHttpRequestResponse original) {
+        URL url = helpers.analyzeRequest(original).getUrl();
+        for (IHttpRequestResponse iHttpRequestResponse : requestsList) {
+            URL u = helpers.analyzeRequest(iHttpRequestResponse).getUrl();
+            if (u.toString().equals(url.toString())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -178,26 +189,27 @@ public class UInterface extends JPanel implements ActionListener {
             this.parametersList.clear();
             this.requestTableModel.setRowCount(0);
             this.parametersTableModel.setRowCount(0);
-        } 
-        else if (source == this.sendToRepeaterButton) {            
+        } else if (source == this.sendToRepeaterButton) {
             int selected = requestsTable.getSelectedRow();
             if (selected != -1) {
-                IHttpRequestResponse msgHTTP = requestsList.get(selected);   
+                IHttpRequestResponse msgHTTP = requestsList.get(selected);
                 IRequestInfo request = helpers.analyzeRequest(msgHTTP);
                 URL url = request.getUrl();
-                ibec.sendToRepeater(url.getHost(), url.getPort(), (url.getPort()==443)
-                        , msgHTTP.getRequest(), null);
+                ibec.sendToRepeater(url.getHost(), url.getPort(), (url.getPort() == 443),
+                         msgHTTP.getRequest(), null);
             }
         }
     }
 
     public void sendToRequestsTable(IHttpRequestResponse rq, LinkedList<IParameter> pwm) {
-        this.requestsList.add(rq);
-        this.parametersList.add(pwm);
-        IRequestInfo requestInfo = this.ibec.getHelpers().analyzeRequest(rq);
-        //sendToParametersTable(pwm);
-        this.requestTableModel.addRow(new String[]{String.valueOf(contRequests++),
-            requestInfo.getMethod(), requestInfo.getUrl().toString()});
+        if (!alreadyExists(rq)) {
+            this.requestsList.add(rq);
+            this.parametersList.add(pwm);
+            IRequestInfo requestInfo = this.ibec.getHelpers().analyzeRequest(rq);
+            //sendToParametersTable(pwm);
+            this.requestTableModel.addRow(new String[]{String.valueOf(contRequests++),
+                requestInfo.getMethod(), requestInfo.getUrl().toString()});
+        }
     }
 
     private void sendToParametersTable(IParameter token) {

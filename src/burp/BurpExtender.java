@@ -37,6 +37,9 @@ public class BurpExtender implements IBurpExtender, IHttpListener {
         if (!isRequest && (IBurpExtenderCallbacks.TOOL_PROXY == flag 
                 || IBurpExtenderCallbacks.TOOL_SPIDER == flag)
                 && ibec.isInScope(message.getUrl())) {
+            if (uInterface.alreadyExists(message)) {
+                return;
+            }
             LinkedList<IParameter> reflectedParams = new LinkedList<>();
             IRequestInfo info = helpers.analyzeRequest(message.getRequest());
             byte[] response = message.getResponse();
