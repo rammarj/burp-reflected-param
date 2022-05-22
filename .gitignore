@@ -1,3 +1,11 @@
 nbproject/*
 build/*
 dist/*
+/target/
+/bin/
+
+## maven ##
+.classpath
+.project
+.settings/
+mvn*
