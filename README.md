@@ -1,4 +1,4 @@
-# burp-dynamic-js
+# burp-reflected-param
 Plugin for Burp Suite Free wich detects reflected parameterss in responses generated server side.
 
 ## Introduction
