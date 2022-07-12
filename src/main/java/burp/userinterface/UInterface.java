@@ -207,7 +207,6 @@ public class UInterface extends JPanel implements ActionListener {
             this.requestsList.add(rq);
             this.parametersList.add(pwm);
             IRequestInfo requestInfo = this.ibec.getHelpers().analyzeRequest(rq);
-            //sendToParametersTable(pwm);
             this.requestTableModel.addRow(new String[]{String.valueOf(contRequests++),
                 requestInfo.getMethod(), requestInfo.getUrl().toString()});
         }
@@ -232,33 +231,4 @@ public class UInterface extends JPanel implements ActionListener {
         this.parametersTableModel.addRow(new String[]{token.getName(), token.getValue(), type});
     }
 
-    /**
-     * Busca una cadena en bytes y devuelve un par (comienzo y fin de la
-     * cadena). Si no encuentra nada retorna NULL
-     */
-    /*private int[] indexOf(byte[] data, byte[] search, int start, int end) {
-        int startIndex = helpers.indexOf(data, search, true, start, end);
-        if (startIndex != -1) {
-            int end_ = startIndex + search.length;
-            return new int[]{startIndex, end_};
-        }
-        return null;
-    }*/
-    /**
-     * Devuelve todas las coincidencias 'search' en 'data'.
-     */
-    /*
-    private LinkedList<int[]> recursiveIndexOf(byte[] data, byte[] search) {
-        LinkedList<int[]> ret = new LinkedList<>();
-        int start = 0, end = data.length - 1;
-        int[] index = null;
-        index = indexOf(data, search, start, end);
-        while (index != null) {
-            ret.add(index);
-            start = index[1]; //ahora empezara buscando desde donde termino el anterior
-            index = indexOf(data, search, start, end);
-        }
-        return ret;
-    }
-     */
 }
