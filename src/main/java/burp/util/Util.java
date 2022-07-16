@@ -23,7 +23,6 @@ public class Util {
         int nextInt, temp;
         for (int i = 0; i < lenght; i++) {
             nextInt = splittableRandom.nextInt(0, 2);
-            temp = 'a';
             if (nextInt == 1) {
                 temp = splittableRandom.nextInt('A', 'Z');
             } else {

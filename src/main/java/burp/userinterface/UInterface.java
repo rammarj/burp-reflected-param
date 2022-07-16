@@ -16,6 +16,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
 import java.util.LinkedList;
+import java.util.List;
+
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -41,10 +43,9 @@ public class UInterface extends JPanel implements ActionListener {
 	private final DefaultTableModel requestTableModel, parametersTableModel;
     private final JButton cleanRequestsButton, sendToRepeaterButton;
     private ITextEditor msgeditorRequest, msgeditorResponse;
-    //private JCheckBox automaticSendCheck;
-    private LinkedList<IHttpRequestResponse> requestsList;
-    private LinkedList<LinkedList<IParameter>> parametersList;
-    private LinkedList<IParameter> tempParamsList;
+    private List<IHttpRequestResponse> requestsList;
+    private List<List<IParameter>> parametersList;
+    private List<IParameter> tempParamsList;
     private final IBurpExtenderCallbacks ibec;
     private int contRequests;
     private JTable requestsTable, parametersTable;
@@ -53,12 +54,10 @@ public class UInterface extends JPanel implements ActionListener {
     public UInterface(IBurpExtenderCallbacks ibec) {
         super(new GridLayout());
         this.ibec = ibec;
-        //selectedRow = -1;
         this.helpers = ibec.getHelpers();
         this.requestsList = new LinkedList<>();
         this.parametersList = new LinkedList<>();
         contRequests = 1;
-        //automaticSendCheck = new JCheckBox("Add request to list (If sends CSRF Tokens)");
         this.cleanRequestsButton = new JButton("Clear requests table");
         this.cleanRequestsButton.addActionListener(this);
 
@@ -75,7 +74,6 @@ public class UInterface extends JPanel implements ActionListener {
         this.msgeditorRequest.setEditable(false);
         this.msgeditorResponse = ibec.createTextEditor();
         this.msgeditorResponse.setEditable(false);
-        //this.requestTableModel.
         //crear panel de requests
         JPanel pnlRequests = new JPanel();
         Border brdRequestList = new TitledBorder(new LineBorder(Color.BLACK), "Requests list");
@@ -123,6 +121,7 @@ public class UInterface extends JPanel implements ActionListener {
         parametersTable.setModel(this.parametersTableModel);
         parametersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         parametersTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+        	
             @Override
             public void valueChanged(ListSelectionEvent e) {
                 int selected = parametersTable.getSelectedRow();
@@ -196,13 +195,13 @@ public class UInterface extends JPanel implements ActionListener {
                 IHttpRequestResponse msgHTTP = requestsList.get(selected);
                 IRequestInfo request = helpers.analyzeRequest(msgHTTP);
                 URL url = request.getUrl();
-                ibec.sendToRepeater(url.getHost(), url.getPort(), (url.getPort() == 443),
+                ibec.sendToRepeater(url.getHost(), url.getPort(), url.getProtocol().equalsIgnoreCase("https"),
                          msgHTTP.getRequest(), null);
             }
         }
     }
 
-    public void sendToRequestsTable(IHttpRequestResponse rq, LinkedList<IParameter> pwm) {
+    public void sendToRequestsTable(IHttpRequestResponse rq, List<IParameter> pwm) {
         if (!alreadyExists(rq)) {
             this.requestsList.add(rq);
             this.parametersList.add(pwm);
