@@ -1,9 +1,8 @@
 package burp;
 
-import burp.userinterface.UInterface;
-import java.awt.Component;
 import java.util.LinkedList;
 import java.util.List;
+import burp.tab.Tab;
 
 /**
  * @author Joaquin R. Martinez
@@ -11,27 +10,18 @@ import java.util.List;
 public class BurpExtender implements IBurpExtender, IHttpListener {
 
     private IBurpExtenderCallbacks ibec;
-    private UInterface uInterface;
+    private Tab uInterface;
     private IExtensionHelpers helpers;
     
     @Override
     public void registerExtenderCallbacks(IBurpExtenderCallbacks ibec) {
-        this.ibec = ibec;//guardar
+        this.ibec = ibec;
+        this.uInterface = new Tab(ibec);
         helpers = ibec.getHelpers();
-        uInterface = new UInterface(ibec);
         ibec.registerHttpListener(this);
-        /*agregar el nuevo tab a burp*/
-        ibec.addSuiteTab(new ITab() {
-            @Override
-            public String getTabCaption() {
-                return "Reflected Parameter";
-            }
-            @Override
-            public Component getUiComponent() {
-                return uInterface;
-            }
-        });
+        ibec.addSuiteTab(this.uInterface);
     }
+    
     @Override
     public void processHttpMessage(int flag, boolean isRequest, IHttpRequestResponse message) {
         IRequestInfo info = helpers.analyzeRequest(message.getRequest());

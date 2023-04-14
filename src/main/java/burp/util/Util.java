@@ -18,16 +18,12 @@ public class Util {
      * @return the random string
      */
     public static String generateRandomString(int lenght) {
-        SplittableRandom splittableRandom = new SplittableRandom();
         StringBuffer a = new StringBuffer();
         int nextInt, temp;
+        SplittableRandom sr = new SplittableRandom();
         for (int i = 0; i < lenght; i++) {
-            nextInt = splittableRandom.nextInt(0, 2);
-            if (nextInt == 1) {
-                temp = splittableRandom.nextInt('A', 'Z');
-            } else {
-                temp = splittableRandom.nextInt('a', 'z');
-            }
+            nextInt = sr.nextInt(0, 2);
+            temp = nextInt == 1 ? sr.nextInt('A', 'Z') : sr.nextInt('a', 'z');
             a.append((char) temp);
         }
         return a.toString();
