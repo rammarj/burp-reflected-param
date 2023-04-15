@@ -5,31 +5,59 @@ import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
+
 import burp.IParameter;
 import burp.ITextEditor;
 
 public class ParametersTable extends JTable implements ListSelectionListener {
 
 	private static final long serialVersionUID = 1L;
-	private JTable parametersTable;
-	private List<IParameter> tempParamsList;
 	private ITextEditor msgeditorRequest, msgeditorResponse;
+	private final DefaultTableModel model;
 	
-	public ParametersTable(JTable parametersTable, ITextEditor msgeditorRequest, ITextEditor msgeditorResponse) {
-		this.parametersTable = parametersTable;
+	public ParametersTable(ITextEditor msgeditorRequest, ITextEditor msgeditorResponse) {
 		this.msgeditorRequest = msgeditorRequest;
 		this.msgeditorResponse = msgeditorResponse;
+		this.model = new DefaultTableModel(new String[]{"name", "value", "type"}, 0);
+		setModel(model);
+		setRowSelectionAllowed(true);
         setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         getSelectionModel().addListSelectionListener(this);
 	}
 
 	@Override
 	public void valueChanged(ListSelectionEvent e) {
-		int selected = parametersTable.getSelectedRow();
+		int selected = getSelectedRow();
         if (selected != -1) {
-            IParameter parametro = tempParamsList.get(selected);
-            msgeditorRequest.setSearchExpression(parametro.getValue());
-            msgeditorResponse.setSearchExpression(parametro.getValue());
+            String parameter = this.model.getValueAt(selected, 0).toString();
+            msgeditorRequest.setSearchExpression(parameter);
+            msgeditorResponse.setSearchExpression(parameter);
         }
+	}
+	
+	public void clearTable() {
+		model.setRowCount(0);
+	}
+	
+	private String getParameterType(byte type) {
+		switch (type) {
+		case IParameter.PARAM_COOKIE:
+			return "COOKIE";
+		case IParameter.PARAM_BODY:
+			return "BODY";
+		case IParameter.PARAM_URL:
+			return "URL";
+		default:
+			return "NOT SUPPORTED YET";
+		}
+	}
+	
+	public void setParameters(List<IParameter> p) {
+		this.model.setRowCount(0);
+		for (IParameter iParameter : p) {
+			String[] data = new String[] {iParameter.getName(), iParameter.getValue(), getParameterType(iParameter.getType())};
+			this.model.addRow(data);
+		}
 	}
 }
