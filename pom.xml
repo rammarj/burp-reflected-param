@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>burp-reflected-param</groupId>
 	<artifactId>burp-reflected-param</artifactId>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<name>Burp Reflected Param</name>
 	<description>Find reflected parameters on responses</description>
 

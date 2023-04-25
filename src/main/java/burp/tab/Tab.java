@@ -7,10 +7,12 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.PopupMenu;
+import java.awt.event.ActionListener;
 import java.net.URL;
 import java.util.List;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -35,6 +37,7 @@ public class Tab extends JPanel implements ITab {
 	private ITextEditor msgeditorRequest, msgeditorResponse;
 	private final IExtensionHelpers helpers;
 	private final RequestsTable requestsTable;
+	private boolean isInScope;
 
 	public Tab(IBurpExtenderCallbacks ibec) {
 		super(new GridLayout());
@@ -45,14 +48,17 @@ public class Tab extends JPanel implements ITab {
 		this.msgeditorRequest.setEditable(false);
 		this.msgeditorResponse = ibec.createTextEditor();
 		this.msgeditorResponse.setEditable(false);
+		this.isInScope = false;
 
-		JPanel pnlRequests = new JPanel();
-		Border brdRequestList = new TitledBorder(new LineBorder(Color.BLACK), "Requests list");
-		pnlRequests.setBorder(brdRequestList);
-		BoxLayout bxl_proyecto = new BoxLayout(pnlRequests, BoxLayout.Y_AXIS);
-		pnlRequests.setLayout(bxl_proyecto);
-
+		// create tables
 		ParametersTable parametersTable = new ParametersTable(msgeditorRequest, msgeditorResponse);
+		JScrollPane sclTblTokens = new JScrollPane();
+		sclTblTokens.setPreferredSize(new Dimension(400, 120));
+		sclTblTokens.setViewportView(parametersTable);
+		JPanel pnlReflectedParams = new JPanel(new GridLayout());
+		pnlReflectedParams.setBorder(new TitledBorder(new LineBorder(Color.BLACK), "Reflected parameters"));
+		pnlReflectedParams.add(sclTblTokens);
+
 		requestsTable = new RequestsTable(msgeditorRequest, msgeditorResponse, helpers) {
 			private static final long serialVersionUID = 1L;
 
@@ -61,69 +67,82 @@ public class Tab extends JPanel implements ITab {
 				parametersTable.setParameters(message.getPwm());
 			}
 		};
+		JPanel leftSidePanel = new JPanel(new BorderLayout());
+		leftSidePanel.add(createIsInScopeCheckBox(), BorderLayout.NORTH);
+		JSplitPane tablesPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+		tablesPanel.add(createRequestsPanel());
+		tablesPanel.add(pnlReflectedParams);
+		leftSidePanel.add(tablesPanel, BorderLayout.CENTER);
+		leftSidePanel.add(createCleanRequestsButtonPanel(e -> {
+			requestsTable.clearTable();
+			parametersTable.clearTable();
+		}), BorderLayout.SOUTH);
 
+		JPanel rightSidePanel = new JPanel(new BorderLayout());
+		JTabbedPane tabRequests = new JTabbedPane();
+		tabRequests.add("Request", this.msgeditorRequest.getComponent());
+		tabRequests.add("Response", this.msgeditorResponse.getComponent());
+		rightSidePanel.add(tabRequests, BorderLayout.CENTER);
+		rightSidePanel.add(createSendToRepeaterButtonPanel(ibec, e -> {
+			ReflectedMessage message = requestsTable.getSelectedMessage();
+			if (message != null) {
+				sendToRepeater(ibec, message.getiHttpRequestResponse());
+			}
+		}), BorderLayout.SOUTH);
+
+		JSplitPane mainContainer = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		mainContainer.add(leftSidePanel);
+		mainContainer.add(rightSidePanel);
+
+		mainContainer.setAutoscrolls(true);
+		add(mainContainer);
+		ibec.customizeUiComponent(this);
+	}
+
+	private JCheckBox createIsInScopeCheckBox() {
+		JCheckBox isInScopeCheckBox = new JCheckBox("Validate only in scope domains");
+		isInScopeCheckBox.addChangeListener(e -> {
+			this.isInScope = isInScopeCheckBox.isSelected();
+		});
+		return isInScopeCheckBox;
+	}
+
+	private JPanel createCleanRequestsButtonPanel(ActionListener l) {
+		JButton cleanRequestsButton = new JButton("clear requests");
+		cleanRequestsButton.addActionListener(l);
+		JPanel pnlClearRrequests = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		pnlClearRrequests.add(cleanRequestsButton);
+		return pnlClearRrequests;
+	}
+
+	private JPanel createRequestsPanel() {
+		JPanel pnlRequests = new JPanel();
+		Border brdRequestList = new TitledBorder(new LineBorder(Color.BLACK), "Requests list");
+		pnlRequests.setBorder(brdRequestList);
+		BoxLayout bxl_proyecto = new BoxLayout(pnlRequests, BoxLayout.Y_AXIS);
+		pnlRequests.setLayout(bxl_proyecto);
+
+		// create panel
 		JScrollPane sclTblRequests = new JScrollPane();
 		sclTblRequests.setPreferredSize(new Dimension(500, 220));
 		sclTblRequests.setViewportView(requestsTable);
 		pnlRequests.add(sclTblRequests);
+		return pnlRequests;
+	}
 
-		JTabbedPane tabRequests = new JTabbedPane();
-		tabRequests.add("Request", this.msgeditorRequest.getComponent());
-		tabRequests.add("Response", this.msgeditorResponse.getComponent());
-		
-		JScrollPane sclTblTokens = new JScrollPane();
-		sclTblTokens.setPreferredSize(new Dimension(400, 120));
-		sclTblTokens.setViewportView(parametersTable);
-
-		JPanel pnlReflectedParams = new JPanel(new GridLayout());
-		pnlReflectedParams.setBorder(new TitledBorder(new LineBorder(Color.BLACK), "Reflected parameters"));
-		pnlReflectedParams.add(sclTblTokens);
-
-		JButton cleanRequestsButton = new JButton("clear requests");
-		cleanRequestsButton.addActionListener(e -> {
-			requestsTable.clearTable();
-			parametersTable.clearTable();
-		});
-
-		JButton sendToRepeaterButton = new JButton("Send to repeater");
-		sendToRepeaterButton.addActionListener(e -> {
-			ReflectedMessage message = requestsTable.getSelectedMessage();
-			if (message != null) {
-				IHttpRequestResponse rq = message.getiHttpRequestResponse();
-				IRequestInfo request = ibec.getHelpers().analyzeRequest(rq);
-				URL url = request.getUrl();
-				ibec.sendToRepeater(url.getHost(), url.getPort(), url.getProtocol().equalsIgnoreCase("https"),
-						rq.getRequest(), null);
-			}
-		});
-
-		JPanel pnlClearRrequests = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-		pnlClearRrequests.add(cleanRequestsButton);
-		pnlReflectedParams.add(pnlClearRrequests);
-
-		JSplitPane splpnIzquierdo = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-		splpnIzquierdo.add(pnlRequests);
-		splpnIzquierdo.add(pnlReflectedParams);
-
-		JPanel pnlIzquierdo = new JPanel(new BorderLayout());
-
-		pnlIzquierdo.add(splpnIzquierdo, BorderLayout.CENTER);
-		pnlIzquierdo.add(pnlClearRrequests, BorderLayout.SOUTH);
-
+	private JPanel createSendToRepeaterButtonPanel(IBurpExtenderCallbacks ibec, ActionListener l) {
 		JPanel pnlSendRepeater = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+		JButton sendToRepeaterButton = new JButton("Send to repeater");
+		sendToRepeaterButton.addActionListener(l);
 		pnlSendRepeater.add(sendToRepeaterButton);
+		return pnlSendRepeater;
+	}
 
-		JPanel pnlRight = new JPanel(new BorderLayout());
-		pnlRight.add(tabRequests, BorderLayout.CENTER);
-		pnlRight.add(pnlSendRepeater, BorderLayout.SOUTH);
-
-		JSplitPane contenedorPrincipal = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-		contenedorPrincipal.add(pnlIzquierdo);
-		contenedorPrincipal.add(pnlRight);
-
-		contenedorPrincipal.setAutoscrolls(true);
-		add(contenedorPrincipal);
-		ibec.customizeUiComponent(this);
+	private void sendToRepeater(IBurpExtenderCallbacks ibec, IHttpRequestResponse rq) {
+		IRequestInfo request = ibec.getHelpers().analyzeRequest(rq);
+		URL url = request.getUrl();
+		ibec.sendToRepeater(url.getHost(), url.getPort(), url.getProtocol().equalsIgnoreCase("https"), rq.getRequest(),
+				null);
 	}
 
 	@Override
@@ -144,4 +163,7 @@ public class Tab extends JPanel implements ITab {
 		return requestsTable.alreadyExists(url);
 	}
 
+	public boolean isInScope() {
+		return isInScope;
+	}
 }

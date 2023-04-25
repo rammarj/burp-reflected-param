@@ -83,4 +83,8 @@ public abstract class RequestsTable extends JTable implements ListSelectionListe
 		return null;
 	}
 	
+	@Override
+	public boolean isCellEditable(int row, int column) {
+		return false; // make cells not editable
+	}
 }

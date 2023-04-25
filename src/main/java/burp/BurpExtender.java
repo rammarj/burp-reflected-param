@@ -1,6 +1,5 @@
 package burp;
 
-import java.util.LinkedList;
 import java.util.List;
 import burp.tab.Tab;
 
@@ -10,16 +9,16 @@ import burp.tab.Tab;
 public class BurpExtender implements IBurpExtender, IHttpListener {
 
 	private IBurpExtenderCallbacks ibec;
-	private Tab uInterface;
+	private Tab reflectedParametersTab;
 	private IExtensionHelpers helpers;
 
 	@Override
 	public void registerExtenderCallbacks(IBurpExtenderCallbacks ibec) {
 		this.ibec = ibec;
-		this.uInterface = new Tab(ibec);
-		helpers = ibec.getHelpers();
-		ibec.registerHttpListener(this);
-		ibec.addSuiteTab(this.uInterface);
+		this.reflectedParametersTab = new Tab(ibec);
+		this.helpers = ibec.getHelpers();
+		this.ibec.registerHttpListener(this);
+		this.ibec.addSuiteTab(this.reflectedParametersTab);
 	}
 
 	@Override
@@ -34,35 +33,30 @@ public class BurpExtender implements IBurpExtender, IHttpListener {
 		}
 
 		IRequestInfo info = helpers.analyzeRequest(message);
-		if (!ibec.isInScope(info.getUrl())) {
-			return; // not process if not in scope
-		}
-
-		if (uInterface.alreadyExists(info.getUrl().toString())) {
+		// validate if in scope check is selected and if domain is in scope
+		if (this.reflectedParametersTab.isInScope() && !ibec.isInScope(info.getUrl())) {
 			return;
 		}
 
-		List<IParameter> reflectedParams = new LinkedList<>();
+		if (this.reflectedParametersTab.alreadyExists(info.getUrl().toString())) {
+			return;
+		}
+
 		List<IParameter> parameters = info.getParameters();
 		byte[] response = message.getResponse();
-		for (IParameter param : parameters) {
-			if (param.getValue().length() > 4) {
-				int indexOf = helpers.indexOf(response, helpers.stringToBytes(param.getValue()), true, 0,
-						response.length - 1);
-				if (indexOf != -1) {
-					reflectedParams.add(param);
-				}
-				// test urldecoded too
-				indexOf = helpers.indexOf(response, helpers.stringToBytes(helpers.urlDecode(param.getValue())), true, 0,
-						response.length - 1);
-				if (indexOf != -1 && reflectedParams.indexOf(param) == -1) {
-					reflectedParams.add(param);
-				}
-			}
-		}
+
+		List<IParameter> reflectedParams = parameters.stream()
+				.filter(e -> e.getValue().length() > 4 && validateIfReflectedParameter(response, e))
+				.toList();
 		if (!reflectedParams.isEmpty()) {
-			uInterface.sendToRequestsTable(message, reflectedParams);
+			this.reflectedParametersTab.sendToRequestsTable(message, reflectedParams);
 		}
+	}
+
+	private boolean validateIfReflectedParameter(byte[] response, IParameter param) {
+		int indexOf = helpers.indexOf(response, helpers.stringToBytes(helpers.urlDecode(param.getValue())), true, 0,
+				response.length - 1);
+		return indexOf != -1;
 	}
 
 }

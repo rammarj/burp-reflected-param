@@ -60,4 +60,9 @@ public class ParametersTable extends JTable implements ListSelectionListener {
 			this.model.addRow(data);
 		}
 	}
+	
+	@Override
+	public boolean isCellEditable(int row, int column) {
+		return false; // make cell not editable when user double clicks in.
+	}
 }
