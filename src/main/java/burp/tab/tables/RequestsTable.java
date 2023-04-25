@@ -7,27 +7,20 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
-import burp.IExtensionHelpers;
 import burp.IHttpRequestResponse;
 import burp.IRequestInfo;
-import burp.ITextEditor;
 import burp.util.ReflectedMessage;
 
 public abstract class RequestsTable extends JTable implements ListSelectionListener {
 
 	private static final long serialVersionUID = 1L;
 	private final Map<String, ReflectedMessage> messages;
-	private ITextEditor msgeditorRequest, msgeditorResponse;
 	private final DefaultTableModel model;
 	private int contRequests;
-	private IExtensionHelpers helpers;
 
-	public RequestsTable(ITextEditor msgeditorRequest, ITextEditor msgeditorResponse, IExtensionHelpers helpers) {
+	public RequestsTable() {
 		this.messages = new HashMap<>();
-		this.msgeditorRequest = msgeditorRequest;
-		this.msgeditorResponse = msgeditorResponse;
 		this.contRequests = 1;
-		this.helpers = helpers;
 		this.model = new DefaultTableModel(new String[] { "#id", "method", "url" }, 0);
 		setModel(model);
 		setRowSelectionAllowed(true);
@@ -41,9 +34,7 @@ public abstract class RequestsTable extends JTable implements ListSelectionListe
 		if (selectedRow != -1) {
 			String url = this.model.getValueAt(selectedRow, 2).toString();
 			ReflectedMessage message = messages.get(url);
-			IHttpRequestResponse requestResponse = message.getiHttpRequestResponse();
-			msgeditorRequest.setText(requestResponse.getRequest());
-			msgeditorResponse.setText(requestResponse.getResponse());
+			IHttpRequestResponse requestResponse = message.getHttpRequestResponse();
 			selectionChanged(message);
 		}
 	}
@@ -54,8 +45,7 @@ public abstract class RequestsTable extends JTable implements ListSelectionListe
 		return this.messages.containsKey(url);
 	}
 
-	public void addRequest(ReflectedMessage rm) {
-		IRequestInfo requestInfo = helpers.analyzeRequest(rm.getiHttpRequestResponse());
+	public void addRequest(ReflectedMessage rm, IRequestInfo requestInfo) {
 		if (alreadyExists(requestInfo.getUrl().toString())) {
 			return;
 		}
@@ -68,8 +58,6 @@ public abstract class RequestsTable extends JTable implements ListSelectionListe
 	public void clearTable() {
 		this.model.setRowCount(0);
 		this.messages.clear();
-		this.msgeditorRequest.setText(null);
-		this.msgeditorResponse.setText(null);
 	}
 	
 	public ReflectedMessage getSelectedMessage() {

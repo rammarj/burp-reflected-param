@@ -7,20 +7,20 @@ import burp.IParameter;
 
 public class ReflectedMessage {
 
-	private IHttpRequestResponse iHttpRequestResponse;
-	private List<IParameter> pwm;
+	private IHttpRequestResponse httpRequestResponse;
+	private List<IParameter> parameters;
 
-	public ReflectedMessage(IHttpRequestResponse iHttpRequestResponse,  List<IParameter> pwm) {
-		this.iHttpRequestResponse = iHttpRequestResponse;
-		this.pwm = pwm;
+	public ReflectedMessage(IHttpRequestResponse httpRequestResponse,  List<IParameter> parameters) {
+		this.httpRequestResponse = httpRequestResponse;
+		this.parameters = parameters;
 	}
 
-	public IHttpRequestResponse getiHttpRequestResponse() {
-		return iHttpRequestResponse;
+	public IHttpRequestResponse getHttpRequestResponse() {
+		return httpRequestResponse;
 	}
 
-	public List<IParameter> getPwm() {
-		return pwm;
+	public List<IParameter> getParameters() {
+		return parameters;
 	}
 	
 }

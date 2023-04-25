@@ -6,19 +6,14 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
-
 import burp.IParameter;
-import burp.ITextEditor;
 
 public class ParametersTable extends JTable implements ListSelectionListener {
 
 	private static final long serialVersionUID = 1L;
-	private ITextEditor msgeditorRequest, msgeditorResponse;
 	private final DefaultTableModel model;
 	
-	public ParametersTable(ITextEditor msgeditorRequest, ITextEditor msgeditorResponse) {
-		this.msgeditorRequest = msgeditorRequest;
-		this.msgeditorResponse = msgeditorResponse;
+	public ParametersTable() {
 		this.model = new DefaultTableModel(new String[]{"name", "value", "type"}, 0);
 		setModel(model);
 		setRowSelectionAllowed(true);
@@ -30,11 +25,12 @@ public class ParametersTable extends JTable implements ListSelectionListener {
 	public void valueChanged(ListSelectionEvent e) {
 		int selected = getSelectedRow();
         if (selected != -1) {
-            String parameter = this.model.getValueAt(selected, 0).toString();
-            msgeditorRequest.setSearchExpression(parameter);
-            msgeditorResponse.setSearchExpression(parameter);
+            String parameterValue = this.model.getValueAt(selected, 0).toString();
+            selectedValueChanged(parameterValue);
         }
 	}
+	
+	public void selectedValueChanged(String value) {}
 	
 	public void clearTable() {
 		model.setRowCount(0);

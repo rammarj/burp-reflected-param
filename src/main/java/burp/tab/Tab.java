@@ -51,7 +51,13 @@ public class Tab extends JPanel implements ITab {
 		this.isInScope = false;
 
 		// create tables
-		ParametersTable parametersTable = new ParametersTable(msgeditorRequest, msgeditorResponse);
+		ParametersTable parametersTable = new ParametersTable() {
+			@Override
+			public void selectedValueChanged(String value) {
+				msgeditorRequest.setSearchExpression(value);
+				msgeditorResponse.setSearchExpression(value);
+			}
+		};
 		JScrollPane sclTblTokens = new JScrollPane();
 		sclTblTokens.setPreferredSize(new Dimension(400, 120));
 		sclTblTokens.setViewportView(parametersTable);
@@ -59,12 +65,14 @@ public class Tab extends JPanel implements ITab {
 		pnlReflectedParams.setBorder(new TitledBorder(new LineBorder(Color.BLACK), "Reflected parameters"));
 		pnlReflectedParams.add(sclTblTokens);
 
-		requestsTable = new RequestsTable(msgeditorRequest, msgeditorResponse, helpers) {
+		requestsTable = new RequestsTable() {
 			private static final long serialVersionUID = 1L;
-
 			@Override
 			public void selectionChanged(ReflectedMessage message) {
-				parametersTable.setParameters(message.getPwm());
+				IHttpRequestResponse requestResponse = message.getHttpRequestResponse();
+				parametersTable.setParameters(message.getParameters());
+				msgeditorRequest.setText(requestResponse.getRequest());
+				msgeditorResponse.setText(requestResponse.getResponse());
 			}
 		};
 		JPanel leftSidePanel = new JPanel(new BorderLayout());
@@ -86,7 +94,7 @@ public class Tab extends JPanel implements ITab {
 		rightSidePanel.add(createSendToRepeaterButtonPanel(ibec, e -> {
 			ReflectedMessage message = requestsTable.getSelectedMessage();
 			if (message != null) {
-				sendToRepeater(ibec, message.getiHttpRequestResponse());
+				sendToRepeater(ibec, message.getHttpRequestResponse());
 			}
 		}), BorderLayout.SOUTH);
 
@@ -156,7 +164,8 @@ public class Tab extends JPanel implements ITab {
 	}
 
 	public void sendToRequestsTable(IHttpRequestResponse rq, List<IParameter> pwm) {
-		requestsTable.addRequest(new ReflectedMessage(rq, pwm));
+		IRequestInfo ri = this.helpers.analyzeRequest(rq.getRequest());
+		requestsTable.addRequest(new ReflectedMessage(rq, pwm), ri);
 	}
 
 	public boolean alreadyExists(String url) {
